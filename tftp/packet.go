@@ -81,3 +81,16 @@ func (pd DATA) Marshal() ([]byte, error) {
 
 	return buff.Bytes(), nil
 }
+
+// ACK represent a parsed Acknowledge packet.
+type ACK struct {
+	BlockId uint16
+}
+
+// ParseACK takes a raw byte slices (include the opcode) and extract the ACK packet.
+func ParseACK(b []byte) (*ACK, error) {
+	if len(b) < 4 {
+		return nil, errors.New("malformed ACK packet. Packet is too short")
+	}
+	return &ACK{BlockId: binary.BigEndian.Uint16(b[2:4])}, nil
+}

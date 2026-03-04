@@ -87,10 +87,26 @@ func (s UdpServer) HandleRRQ(conn *net.UDPConn, addr *net.UDPAddr, rrq *RRQ) {
 
 ![FirstSuccessfulConnection.png](assets/FirstSuccessfulConnection.png)
 
+## Step 3 ~ Go routines
+
+The issue: UDP is stateless, so the server must keep track of the current state for each connection.
+`TFTP` offers a solution to this problem: it listens for every request on port `69` and hands the client off to a new
+ephemeral port. With this solution, I can take advantage of goroutines. After the initial request on port `69`, I can
+hand
+off the request to a dedicated worker.
+
+I have refactored the function `HandleRRQ(addr *net.UDPAddr, rrq *RRQ)` to receive only the client address and the RRQ
+packet as arguments. The function immediately creates a new UDP socket with an ephemeral port. All communication will go
+through it. The function starts by sending a `DATA` packet with the first 512 bytes and waits for an `ACK`. The `ACK`
+must be received within 3 seconds; otherwise, the function times out and sends the same block again. The function will
+try to send the same block 3 times before giving up and closing the connection. If the `ACK` is received correctly, the
+function sends the next block. This cycle repeats until the final block (less than 512 bytes) is sent correctly.
+
 ## Project Status
 
 - [x] UDP Server on Port 69
 - [x] RRQ (Read Request) Parsing
 - [x] DATA Packet Marshaling
-- [ ] Open a new UDP socket (ephemeral port) to transfer file.
-- [ ] ACK (Acknowledgment) Handling
+- [x] Open a new UDP socket (ephemeral port) to transfer file.
+- [x] ACK (Acknowledgment) Handling
+- [ ] Read and send a file on the file system.
