@@ -102,6 +102,41 @@ must be received within 3 seconds; otherwise, the function times out and sends t
 try to send the same block 3 times before giving up and closing the connection. If the `ACK` is received correctly, the
 function sends the next block. This cycle repeats until the final block (less than 512 bytes) is sent correctly.
 
+## Step 4: File and Error Packets
+
+Implementing the logic to read a file from the file system was a straightforward task. Inside the `HandleRRQ` function,
+the file is opened and read using a 512-byte buffer. At this stage, `HandleRRQ` had become quite long and was handling
+too many responsibilities, which prompted me to perform a refactoring.
+
+I created a new Go file (`transfer.go`) dedicated specifically to packet transfer logic. From `HandleRRQ`, I extracted
+the function: `streamFileToClient(conn *net.UDPConn, addr *net.UDPAddr, file *os.File)`
+The primary goal of this function is to transfer the provided file by dividing it into DATA packets. It utilizes
+`sendDataWithRetries(conn *net.UDPConn, clientAddr *net.UDPAddr, data DATA)`, which manages the network I/O, timeouts,
+and retransmission logic.
+
+After completing the transfer logic, I implemented **ERROR packets** to notify the client about any error.
+
+```
+       2 bytes     2 bytes      string    1 byte
+      -------------------------------------------
+ERROR |  05     |  ErrorCode |  ErrMsg  |   0   |
+      -------------------------------------------
+```
+
+I defined a specific ERROR struct with a `Marshal()` method to ensure the structure is encoded correctly. In
+`transfer.go`,
+I also created a helper function to simplify sending these packets:
+`sendErrorPacket(conn *net.UDPConn, addr *net.UDPAddr, code ErrorCode, message string)`. Using this function, I can
+easily return error messages to the client. For example, handling a missing file looks like this:
+
+```
+if errors.Is(err, os.ErrNotExist) {
+        if err := sendErrorPacket(conn, addr, ErrorFileNotFount, "File not found!"); err != nil {
+            log.Printf("Error sending the error packet: %v\n", err)
+        }
+    }
+```
+
 ## Project Status
 
 - [x] UDP Server on Port 69
@@ -109,4 +144,6 @@ function sends the next block. This cycle repeats until the final block (less th
 - [x] DATA Packet Marshaling
 - [x] Open a new UDP socket (ephemeral port) to transfer file.
 - [x] ACK (Acknowledgment) Handling
-- [ ] Read and send a file on the file system.
+- [x] Read and send a file on the file system.
+- [x] Create and send ERROR packets
+- [ ] Implements WRQ logic

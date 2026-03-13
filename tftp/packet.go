@@ -17,7 +17,23 @@ const (
 	OpERROR OpCode = 5 // Error
 )
 
-const MaxPacketSize = 516
+type ErrorCode uint16
+
+const (
+	ErrorNotDefined           ErrorCode = 0
+	ErrorFileNotFount         ErrorCode = 1
+	ErrorAccessViolation      ErrorCode = 2
+	ErrorDiskFull             ErrorCode = 3
+	ErrorIllegalTFTPOperation ErrorCode = 4
+	ErrorUnknowTransferID     ErrorCode = 5
+	ErrorFileAlreadyExist     ErrorCode = 6
+	ErrorNoSuchUser           ErrorCode = 7
+)
+
+const (
+	MaxPacketSize = 516 // Max TFTP packet size
+	MaxDataSize   = 512 // Max Data transferred by DATA packet
+)
 
 // Extract the operation code from the buffer.
 // The op. code is in the first 2 bytes of the packet.
@@ -66,7 +82,7 @@ func (pd DATA) Marshal() ([]byte, error) {
 	buff := new(bytes.Buffer)
 
 	// Writes the opcode
-	err := binary.Write(buff, binary.BigEndian, uint16(3))
+	err := binary.Write(buff, binary.BigEndian, uint16(OpDATA))
 	if err != nil {
 		return nil, err
 	}
@@ -93,4 +109,36 @@ func ParseACK(b []byte) (*ACK, error) {
 		return nil, errors.New("malformed ACK packet. Packet is too short")
 	}
 	return &ACK{BlockId: binary.BigEndian.Uint16(b[2:4])}, nil
+}
+
+type ERROR struct {
+	ErrorCode    ErrorCode
+	ErrorMessage string
+}
+
+func (e ERROR) Marshal() ([]byte, error) {
+	buff := new(bytes.Buffer)
+
+	// Writes the opcode
+	err := binary.Write(buff, binary.BigEndian, uint16(OpERROR))
+	if err != nil {
+		return nil, err
+	}
+
+	// Writes the error code
+	err = binary.Write(buff, binary.BigEndian, uint16(e.ErrorCode))
+	if err != nil {
+		return nil, err
+	}
+
+	// Write the error message
+	buff.WriteString(e.ErrorMessage)
+
+	// Write the end 0-byte
+	err = binary.Write(buff, binary.BigEndian, uint8(0))
+	if err != nil {
+		return nil, err
+	}
+
+	return buff.Bytes(), nil
 }
