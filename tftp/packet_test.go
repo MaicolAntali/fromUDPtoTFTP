@@ -9,13 +9,13 @@ func TestParseRRQ(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     []byte
-		want    *RRQ
+		want    *RWRQ
 		wantErr bool
 	}{
 		{
-			name:    "Standard RRQ format",
+			name:    "Standard RWRQ format",
 			arg:     []byte("\x00\x01test.txt\x00octet\x00"),
-			want:    &RRQ{Filename: "test.txt", Mode: "octet"},
+			want:    &RWRQ{Filename: "test.txt", Mode: "octet"},
 			wantErr: false,
 		},
 		{
@@ -39,13 +39,13 @@ func TestParseRRQ(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseRRQ(tt.arg)
+			got, err := ParseRWRQ(tt.arg)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseRRQ() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ParseRWRQ() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseRRQ() got = %v, want %v", got, tt.want)
+				t.Errorf("ParseRWRQ() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

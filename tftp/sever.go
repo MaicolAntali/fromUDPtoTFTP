@@ -33,16 +33,23 @@ func (s UdpServer) ListenAndServe() error {
 
 		switch extractTheOpCode(rawPacket[:n]) {
 		case OpRRQ:
-			log.Printf("Received RRQ packet from %s\n", clientAddr)
-			rrq, err := ParseRRQ(rawPacket[:n])
+			log.Printf("Received RWRQ packet from %s\n", clientAddr)
+			rrq, err := ParseRWRQ(rawPacket[:n])
 			if err != nil {
-				log.Printf("Malformed RRQ request from %s, error: %v\n", clientAddr, err)
+				log.Printf("Malformed RWRQ request from %s, error: %v\n", clientAddr, err)
 				continue
 			}
 
 			go s.HandleRRQ(clientAddr, rrq)
 		case OpWRQ:
 			log.Printf("Received WRQ packet from %s\n", clientAddr)
+			rrq, err := ParseRWRQ(rawPacket[:n])
+			if err != nil {
+				log.Printf("Malformed RWRQ request from %s, error: %v\n", clientAddr, err)
+				continue
+			}
+
+			go s.HandleWRQ(clientAddr, rrq)
 		default:
 			if err := sendErrorPacket(conn, clientAddr, ErrorIllegalTFTPOperation, "Illegal TFTP operation"); err != nil {
 				log.Println(err)
@@ -52,7 +59,7 @@ func (s UdpServer) ListenAndServe() error {
 	}
 }
 
-func (s UdpServer) HandleRRQ(addr *net.UDPAddr, rrq *RRQ) {
+func (s UdpServer) HandleRRQ(addr *net.UDPAddr, rrq *RWRQ) {
 	log.Printf("Client wants to read file: %s in mode: %s\n", rrq.Filename, rrq.Mode)
 
 	conn, err := createUdpConn(":0")
@@ -76,6 +83,33 @@ func (s UdpServer) HandleRRQ(addr *net.UDPAddr, rrq *RRQ) {
 	defer file.Close()
 
 	if err := streamFileToClient(conn, addr, file); err != nil {
+		log.Printf("Error streaming the file %v to %v: %v\n", file, addr, err)
+		return
+	}
+	log.Printf("File %v Transfer completed to %v!\n", file, addr)
+}
+
+func (s UdpServer) HandleWRQ(addr *net.UDPAddr, rrq *RWRQ) {
+	log.Printf("Client wants to write file: %s in mode: %s\n", rrq.Filename, rrq.Mode)
+
+	conn, err := createUdpConn(":0")
+	if err != nil {
+		log.Println("Impossible creare a new UDP socket", err)
+		return
+	}
+	defer conn.Close()
+
+	// Create the file
+	file, err := os.Create(rrq.Filename)
+	if err != nil {
+		log.Printf("Error opening file %s: %s\n\n", rrq.Filename, err)
+		return
+	}
+	defer file.Close()
+
+	_ = sendAck(conn, addr, 0) // Special block ID for WRQ
+
+	if err := streamFileFromClient(conn, addr, file); err != nil {
 		log.Printf("Error streaming the file %v to %v: %v\n", file, addr, err)
 		return
 	}

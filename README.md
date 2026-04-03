@@ -137,6 +137,11 @@ if errors.Is(err, os.ErrNotExist) {
     }
 ```
 
+## Step 5: Implementing WRQ
+Implementing the logic for WRITE request was pretty straight forward. I follow the same code structure used in the RDD requests in the revers order. I successful implement the full WRQ logic:
+
+![FirstSuccessfulConnection.png](assets/SuccessfulWRQ.png)
+
 ## Project Status
 
 - [x] UDP Server on Port 69
@@ -146,4 +151,5 @@ if errors.Is(err, os.ErrNotExist) {
 - [x] ACK (Acknowledgment) Handling
 - [x] Read and send a file on the file system.
 - [x] Create and send ERROR packets
-- [ ] Implements WRQ logic
+- [x] Implements WRQ logic
+- [ ] Implements modes
