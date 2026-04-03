@@ -29,7 +29,7 @@ Each op. code is represented in the code as a constant of type `OpCode`.
 The `OpCode` is defined as a `uint16` to match the 2-byte field specified in the RFC.
 I had used the `OpCode` constant in a switch so we can decide how to treat each packet.
 
-```
+```go
 switch extractTheOpCode(rawPacket[:n]) {
 case OpRRQ:
     log.Printf("Received RRQ packet from %s\n", clientAddr)
@@ -44,7 +44,7 @@ After reviewing what I was done until now, I realize that probably I should crea
 information. Each packet type has a unique structure and specific logic requirements.
 I started by implementing the `RRQ` (Read Request) struct:
 
-```
+```go
 type RRQ struct {
 	Filename string
 	Mode     string
@@ -56,7 +56,7 @@ an RRQ struct. Once that was in place, I write the server function
 `HandleRRQ(conn *net.UDPConn, addr *net.UDPAddr, rrq *RRQ)` that effectively handles the RRQ request by sending data.
 After putting all together this how it looks my case of RRQ:
 
-```
+```go
 case OpRRQ:
     log.Printf("Received RRQ packet from %s\n", clientAddr)
     rrq, err := ParseRRQ(rawPacket[:n])
@@ -72,7 +72,7 @@ Now I was ready to send the first few bytes! I implement the `DATA` struct and t
 function that create a ready to send, byte slice (packet) from the `DATA` struct. After marshaling a hard code `DATA`
 struct I have sent the first few bytes through the TFTP protocol!!
 
-```
+```go
 func (s UdpServer) HandleRRQ(conn *net.UDPConn, addr *net.UDPAddr, rrq *RRQ) {
 	log.Printf("Client wants to read file: %s in mode: %s\n", rrq.Filename, rrq.Mode)
 
@@ -129,7 +129,7 @@ I also created a helper function to simplify sending these packets:
 `sendErrorPacket(conn *net.UDPConn, addr *net.UDPAddr, code ErrorCode, message string)`. Using this function, I can
 easily return error messages to the client. For example, handling a missing file looks like this:
 
-```
+```go
 if errors.Is(err, os.ErrNotExist) {
         if err := sendErrorPacket(conn, addr, ErrorFileNotFount, "File not found!"); err != nil {
             log.Printf("Error sending the error packet: %v\n", err)
