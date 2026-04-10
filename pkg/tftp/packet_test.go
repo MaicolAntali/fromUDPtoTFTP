@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestParseRRQ(t *testing.T) {
+func TestParseRWRQ(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     []byte
@@ -51,7 +51,7 @@ func TestParseRRQ(t *testing.T) {
 	}
 }
 
-func TestDATA_Marshal(t *testing.T) {
+func TestMarshalDATA(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  DATA
@@ -84,6 +84,40 @@ func TestDATA_Marshal(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Marshal() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseDATA(t *testing.T) {
+	tests := []struct {
+		name    string
+		arg     []byte
+		want    *DATA
+		wantErr bool
+	}{
+		{
+			name:    "Standard DATA format",
+			arg:     []byte("\x00\x01\x00\x05fooBar"),
+			want:    &DATA{BlockId: 5, Payload: []byte("fooBar")},
+			wantErr: false,
+		},
+		{
+			name:    "Short DATA packet",
+			arg:     []byte("\x00\x01"),
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseData(tt.arg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseData() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

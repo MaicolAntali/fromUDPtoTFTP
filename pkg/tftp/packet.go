@@ -25,7 +25,7 @@ const (
 	ErrorAccessViolation      ErrorCode = 2
 	ErrorDiskFull             ErrorCode = 3
 	ErrorIllegalTFTPOperation ErrorCode = 4
-	ErrorUnknowTransferID     ErrorCode = 5
+	ErrorUnknownTransferID    ErrorCode = 5
 	ErrorFileAlreadyExist     ErrorCode = 6
 	ErrorNoSuchUser           ErrorCode = 7
 )
@@ -77,20 +77,6 @@ type DATA struct {
 	Payload []byte
 }
 
-// ParseACK takes a raw byte slices (include the opcode) and extract the ACK packet.
-func ParseData(b []byte) (*DATA, error) {
-	if len(b) < 4 {
-		return nil, errors.New("malformed ACK packet. Packet is too short")
-	}
-
-	d := &DATA{
-		BlockId: binary.BigEndian.Uint16(b[2:4]),
-		Payload: b[4:],
-	}
-
-	return d, nil
-}
-
 // Marshal creates slice of bytes (packet) ready to send from a DATA struct
 func (pd DATA) Marshal() ([]byte, error) {
 	buff := new(bytes.Buffer)
@@ -110,6 +96,20 @@ func (pd DATA) Marshal() ([]byte, error) {
 	buff.Write(pd.Payload)
 
 	return buff.Bytes(), nil
+}
+
+// ParseACK takes a raw byte slices (include the opcode) and extract the ACK packet.
+func ParseData(b []byte) (*DATA, error) {
+	if len(b) < 4 {
+		return nil, errors.New("malformed ACK packet. Packet is too short")
+	}
+
+	d := &DATA{
+		BlockId: binary.BigEndian.Uint16(b[2:4]),
+		Payload: b[4:],
+	}
+
+	return d, nil
 }
 
 // ACK represent a parsed Acknowledge packet.

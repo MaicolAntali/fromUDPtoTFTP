@@ -129,7 +129,7 @@ func waitForACK(conn *net.UDPConn, addr *net.UDPAddr, blockID uint16) error {
 			}
 
 			if addr.Port != respAddr.Port {
-				if err := sendErrorPacket(conn, respAddr, ErrorUnknowTransferID, "Unknown transfer ID!"); err != nil {
+				if err := sendErrorPacket(conn, respAddr, ErrorUnknownTransferID, "Unknown transfer ID!"); err != nil {
 					return err
 				}
 				continue
@@ -167,7 +167,7 @@ func waitForData(conn *net.UDPConn, addr *net.UDPAddr, blockID uint16) (*DATA, e
 			}
 
 			if addr.Port != respAddr.Port {
-				if err := sendErrorPacket(conn, respAddr, ErrorUnknowTransferID, "Unknown transfer ID!"); err != nil {
+				if err := sendErrorPacket(conn, respAddr, ErrorUnknownTransferID, "Unknown transfer ID!"); err != nil {
 					return nil, err
 				}
 				continue

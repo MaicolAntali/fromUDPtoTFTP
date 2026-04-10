@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/maicolantali/fromUDPtoTFTP/tftp"
+	"github.com/maicolantali/fromUDPtoTFTP/pkg/tftp"
 )
 
 func main() {
